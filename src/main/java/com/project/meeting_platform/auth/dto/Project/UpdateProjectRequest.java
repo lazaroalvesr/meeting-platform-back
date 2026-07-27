@@ -1,0 +1,27 @@
+package com.project.meeting_platform.auth.dto.Project;
+
+import com.project.meeting_platform.Enum.Project.ContractStatus;
+import com.project.meeting_platform.Enum.Project.ProjectStatus;
+import com.project.meeting_platform.Enum.Project.ProjectType;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public record UpdateProjectRequest(
+        @NotBlank @Size(max = 160) String name,
+        @NotNull ProjectType projectType,
+        @NotNull ProjectStatus status,
+        @Size(max = 20_000) String scope,
+        @DecimalMin(value = "0.00") BigDecimal totalValue,
+        @NotNull ContractStatus contractStatus,
+        @Size(max = 2048) String contractUrl,
+        boolean maintenanceActive,
+        @DecimalMin(value = "0.00") BigDecimal maintenanceMonthlyValue,
+        LocalDate startDate,
+        LocalDate deliveryDate
+) {
+}

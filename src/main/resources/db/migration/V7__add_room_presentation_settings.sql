@@ -1,0 +1,2 @@
+ALTER TABLE rooms
+    ADD COLUMN scroll_locked BOOLEAN NOT NULL DEFAULT TRUE;

@@ -1,0 +1,2 @@
+ALTER TABLE rooms
+    ADD COLUMN presentation_active BOOLEAN NOT NULL DEFAULT TRUE;

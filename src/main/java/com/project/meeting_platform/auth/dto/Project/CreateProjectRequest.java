@@ -25,6 +25,7 @@ public record CreateProjectRequest(
         @Size(max = 2048) String contractUrl,
         boolean maintenanceActive,
         @DecimalMin(value = "0.00") BigDecimal maintenanceMonthlyValue,
+        LocalDate maintenanceStartDate,
         @Min(1) @Max(2) Integer installmentCount,
         @NotNull LocalDate startDate,
         @NotNull LocalDate deliveryDate

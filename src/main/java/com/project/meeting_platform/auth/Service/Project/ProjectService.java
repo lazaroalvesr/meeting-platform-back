@@ -13,6 +13,8 @@ import com.project.meeting_platform.Repository.User.UserRepository;
 import com.project.meeting_platform.auth.dto.Project.CreateProjectRequest;
 import com.project.meeting_platform.auth.dto.Project.ProjectResponse;
 import com.project.meeting_platform.auth.dto.Project.UpdateProjectRequest;
+import com.project.meeting_platform.auth.Service.Payment.MaintenanceBillingService;
+import com.project.meeting_platform.auth.Service.Asaas.AsaasSubscriptionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -39,21 +41,28 @@ public class ProjectService {
     private final ClientRepository clientRepository;
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final MaintenanceBillingService maintenanceBillingService;
+    private final AsaasSubscriptionService asaasSubscriptionService;
 
     public ProjectService(
             ProjectRepository projectRepository,
             ClientRepository clientRepository,
             UserRepository userRepository,
-            PaymentRepository paymentRepository
+            PaymentRepository paymentRepository,
+            MaintenanceBillingService maintenanceBillingService,
+            AsaasSubscriptionService asaasSubscriptionService
     ) {
         this.projectRepository = projectRepository;
         this.clientRepository = clientRepository;
         this.userRepository = userRepository;
         this.paymentRepository = paymentRepository;
+        this.maintenanceBillingService = maintenanceBillingService;
+        this.asaasSubscriptionService = asaasSubscriptionService;
     }
 
     @Transactional
     public ProjectResponse create(String authenticatedEmail, CreateProjectRequest request) {
+        validateMaintenance(request.maintenanceActive(), request.maintenanceMonthlyValue(), request.maintenanceStartDate());
         User owner = userRepository.findByEmail(authenticatedEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário autenticado não encontrado."));
 
@@ -73,12 +82,14 @@ public class ProjectService {
                 normalize(request.contractUrl()),
                 request.maintenanceActive(),
                 request.maintenanceActive() ? request.maintenanceMonthlyValue() : null,
+                resolveMaintenanceStartDate(request.maintenanceActive(), request.maintenanceStartDate(), request.deliveryDate(), request.startDate()),
                 request.startDate(),
                 request.deliveryDate()
         );
 
         projectRepository.save(project);
         createProjectPayments(project, request.installmentCount());
+        syncMaintenanceBilling(project);
         return ProjectResponse.from(project);
     }
 
@@ -92,6 +103,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse update(String authenticatedEmail, java.util.UUID projectId, UpdateProjectRequest request) {
+        validateMaintenance(request.maintenanceActive(), request.maintenanceMonthlyValue(), request.maintenanceStartDate());
         Project project = projectRepository.findById(projectId)
                 .filter(foundProject -> foundProject.getOwner().getEmail().equals(authenticatedEmail))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
@@ -106,10 +118,12 @@ public class ProjectService {
                 normalize(request.contractUrl()),
                 request.maintenanceActive(),
                 request.maintenanceMonthlyValue(),
+                resolveMaintenanceStartDate(request.maintenanceActive(), request.maintenanceStartDate(), request.deliveryDate(), request.startDate()),
                 request.startDate(),
                 request.deliveryDate()
         );
         rescheduleFinalPayment(project);
+        syncMaintenanceBilling(project);
 
         return ProjectResponse.from(project);
     }
@@ -117,6 +131,7 @@ public class ProjectService {
     @Transactional
     public void delete(String authenticatedEmail, java.util.UUID projectId) {
         Project project = findOwnedProject(authenticatedEmail, projectId);
+        asaasSubscriptionService.cancelMaintenanceSubscription(project);
         paymentRepository.deleteByProject_Id(project.getId());
         projectRepository.delete(project);
 
@@ -185,6 +200,47 @@ public class ProjectService {
 
     private String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private LocalDate resolveMaintenanceStartDate(
+            boolean maintenanceActive,
+            LocalDate requestedMaintenanceStartDate,
+            LocalDate deliveryDate,
+            LocalDate startDate
+    ) {
+        if (!maintenanceActive) {
+            return null;
+        }
+        if (requestedMaintenanceStartDate != null) {
+            return requestedMaintenanceStartDate;
+        }
+        return deliveryDate != null ? deliveryDate : startDate;
+    }
+
+    private void validateMaintenance(
+            boolean maintenanceActive,
+            BigDecimal maintenanceMonthlyValue,
+            LocalDate maintenanceStartDate
+    ) {
+        if (!maintenanceActive) {
+            return;
+        }
+        if (maintenanceMonthlyValue == null || maintenanceMonthlyValue.signum() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o valor mensal da manutenção.");
+        }
+        if (maintenanceStartDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o primeiro vencimento da manutenção.");
+        }
+    }
+
+    private void syncMaintenanceBilling(Project project) {
+        if (!project.isMaintenanceActive()) {
+            asaasSubscriptionService.cancelMaintenanceSubscription(project);
+            return;
+        }
+        if (!asaasSubscriptionService.syncMaintenanceSubscription(project)) {
+            maintenanceBillingService.createInitialOrCurrentMonthPayment(project);
+        }
     }
 
     private void createProjectPayments(Project project, Integer requestedInstallments) {

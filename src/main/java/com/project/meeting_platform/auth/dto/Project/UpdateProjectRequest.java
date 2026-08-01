@@ -21,6 +21,7 @@ public record UpdateProjectRequest(
         @Size(max = 2048) String contractUrl,
         boolean maintenanceActive,
         @DecimalMin(value = "0.00") BigDecimal maintenanceMonthlyValue,
+        LocalDate maintenanceStartDate,
         LocalDate startDate,
         LocalDate deliveryDate
 ) {

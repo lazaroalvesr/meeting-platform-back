@@ -59,6 +59,11 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
+    public void updateProfile(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
+
     public void deactivate() {
         this.active = false;
     }

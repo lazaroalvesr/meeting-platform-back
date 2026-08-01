@@ -36,6 +36,9 @@ public class Participant {
     @Column(name = "left_at")
     private Instant leftAt;
 
+    @Column(name = "last_seen_at", nullable = false)
+    private Instant lastSeenAt;
+
     public Participant(
             Room room,
             String displayName,
@@ -48,10 +51,16 @@ public class Participant {
 
     @PrePersist
     private void onCreate() {
-        this.joinedAt = Instant.now();
+        Instant now = Instant.now();
+        this.joinedAt = now;
+        this.lastSeenAt = now;
     }
 
     public void leave() {
         this.leftAt = Instant.now();
+    }
+
+    public void touch() {
+        this.lastSeenAt = Instant.now();
     }
 }

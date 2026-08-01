@@ -65,6 +65,10 @@ public class SecurityConfig {
                                 "/api/rooms/*/participants/*/leave"
                         ).permitAll()
                         .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/rooms/*/participants/*/heartbeat"
+                        ).permitAll()
+                        .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/rooms/*/participants"
                         ).permitAll()

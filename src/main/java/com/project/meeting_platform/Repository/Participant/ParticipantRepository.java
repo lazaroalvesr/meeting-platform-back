@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.Instant;
 import java.util.UUID;
 
 public interface ParticipantRepository extends JpaRepository<Participant, UUID> {
@@ -20,4 +21,8 @@ public interface ParticipantRepository extends JpaRepository<Participant, UUID> 
             UUID roomId,
             ParticipantRole role
     );
+
+    List<Participant> findByLeftAtIsNullAndLastSeenAtBefore(Instant cutoff);
+
+    boolean existsByRoom_IdAndLeftAtIsNull(UUID roomId);
 }

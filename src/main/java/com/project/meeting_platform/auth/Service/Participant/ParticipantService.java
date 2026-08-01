@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -104,6 +105,32 @@ public class ParticipantService {
                         roomSlug
                 )
                 .ifPresent(Participant::leave);
+    }
+
+    @Transactional
+    public void heartbeat(String roomSlug, UUID participantId) {
+        participantRepository.findByIdAndRoom_SlugAndLeftAtIsNull(
+                        participantId,
+                        roomSlug
+                )
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.GONE,
+                        "Participante não está mais ativo nesta sala."
+                ))
+                .touch();
+    }
+
+    @Transactional
+    public void expireInactiveParticipantsAndCloseEmptyRooms(long timeoutSeconds) {
+        Instant cutoff = Instant.now().minusSeconds(timeoutSeconds);
+
+        participantRepository.findByLeftAtIsNullAndLastSeenAtBefore(cutoff)
+                .forEach(Participant::leave);
+
+        roomRepository.findByStatus(RoomStatus.ACTIVE)
+                .stream()
+                .filter(room -> !participantRepository.existsByRoom_IdAndLeftAtIsNull(room.getId()))
+                .forEach(Room::close);
     }
 
     @Transactional(readOnly = true)

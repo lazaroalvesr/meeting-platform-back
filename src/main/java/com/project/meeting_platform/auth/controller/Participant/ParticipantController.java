@@ -67,4 +67,13 @@ public class ParticipantController {
         participantService.leave(slug, participantId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{participantId}/heartbeat")
+    public ResponseEntity<Void> heartbeat(
+            @PathVariable String slug,
+            @PathVariable java.util.UUID participantId
+    ) {
+        participantService.heartbeat(slug, participantId);
+        return ResponseEntity.noContent().build();
+    }
 }

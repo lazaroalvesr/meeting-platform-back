@@ -60,6 +60,12 @@ public class Project {
     @Column(name = "maintenance_monthly_value", precision = 12, scale = 2)
     private BigDecimal maintenanceMonthlyValue;
 
+    @Column(name = "maintenance_start_date")
+    private LocalDate maintenanceStartDate;
+
+    @Column(name = "asaas_subscription_id", length = 64, unique = true)
+    private String asaasSubscriptionId;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
@@ -84,6 +90,7 @@ public class Project {
             String contractUrl,
             boolean maintenanceActive,
             BigDecimal maintenanceMonthlyValue,
+            LocalDate maintenanceStartDate,
             LocalDate startDate,
             LocalDate deliveryDate
     ) {
@@ -97,7 +104,8 @@ public class Project {
         this.contractStatus = contractStatus;
         this.contractUrl = contractUrl;
         this.maintenanceActive = maintenanceActive;
-        this.maintenanceMonthlyValue = maintenanceMonthlyValue;
+        this.maintenanceMonthlyValue = maintenanceActive ? maintenanceMonthlyValue : null;
+        this.maintenanceStartDate = maintenanceActive ? maintenanceStartDate : null;
         this.startDate = startDate;
         this.deliveryDate = deliveryDate;
     }
@@ -112,6 +120,7 @@ public class Project {
             String contractUrl,
             boolean maintenanceActive,
             BigDecimal maintenanceMonthlyValue,
+            LocalDate maintenanceStartDate,
             LocalDate startDate,
             LocalDate deliveryDate
     ) {
@@ -124,12 +133,21 @@ public class Project {
         this.contractUrl = contractUrl;
         this.maintenanceActive = maintenanceActive;
         this.maintenanceMonthlyValue = maintenanceActive ? maintenanceMonthlyValue : null;
+        this.maintenanceStartDate = maintenanceActive ? maintenanceStartDate : null;
         this.startDate = startDate == null ? this.startDate : startDate;
         this.deliveryDate = deliveryDate;
     }
 
     public void attachContract(String contractUrl) {
         this.contractUrl = contractUrl;
+    }
+
+    public void linkAsaasSubscription(String asaasSubscriptionId) {
+        this.asaasSubscriptionId = asaasSubscriptionId;
+    }
+
+    public void unlinkAsaasSubscription() {
+        this.asaasSubscriptionId = null;
     }
 
     @PrePersist

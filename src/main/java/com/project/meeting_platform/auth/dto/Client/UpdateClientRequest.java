@@ -14,6 +14,14 @@ public record UpdateClientRequest(
 
         @Email(message = "Informe um e-mail válido.")
         @Size(max = 255)
-        String email
+        String email,
+
+        @Size(max = 30)
+        String phone,
+
+        @Size(max = 30)
+        String document,
+
+        String notes
 ) {
 }

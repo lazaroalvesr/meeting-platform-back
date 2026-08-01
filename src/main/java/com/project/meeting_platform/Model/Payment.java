@@ -42,6 +42,12 @@ public class Payment {
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 
+    @Column(name = "reference_month")
+    private LocalDate referenceMonth;
+
+    @Column(name = "asaas_payment_id", length = 64, unique = true)
+    private String asaasPaymentId;
+
     @Column(name = "paid_at")
     private Instant paidAt;
 
@@ -57,12 +63,26 @@ public class Payment {
             LocalDate dueDate,
             Instant paidAt
     ) {
+        this(project, description, paymentType, status, amount, dueDate, null, paidAt);
+    }
+
+    public Payment(
+            Project project,
+            String description,
+            PaymentType paymentType,
+            PaymentStatus status,
+            BigDecimal amount,
+            LocalDate dueDate,
+            LocalDate referenceMonth,
+            Instant paidAt
+    ) {
         this.project = project;
         this.description = description;
         this.paymentType = paymentType;
         this.status = status;
         this.amount = amount;
         this.dueDate = dueDate;
+        this.referenceMonth = referenceMonth;
         this.paidAt = paidAt;
     }
 
@@ -80,5 +100,21 @@ public class Payment {
         if (this.status == PaymentStatus.PENDING || this.status == PaymentStatus.OVERDUE) {
             this.dueDate = dueDate;
         }
+    }
+
+    public void syncFromAsaas(
+            String asaasPaymentId,
+            PaymentStatus status,
+            BigDecimal amount,
+            LocalDate dueDate,
+            LocalDate referenceMonth,
+            Instant paidAt
+    ) {
+        this.asaasPaymentId = asaasPaymentId;
+        this.status = status;
+        this.amount = amount;
+        this.dueDate = dueDate;
+        this.referenceMonth = referenceMonth;
+        this.paidAt = paidAt;
     }
 }

@@ -23,6 +23,7 @@ public record ProjectResponse(
         String contractUrl,
         boolean maintenanceActive,
         BigDecimal maintenanceMonthlyValue,
+        LocalDate maintenanceStartDate,
         LocalDate startDate,
         LocalDate deliveryDate,
         Instant createdAt
@@ -41,6 +42,7 @@ public record ProjectResponse(
                 project.getContractUrl(),
                 project.isMaintenanceActive(),
                 project.getMaintenanceMonthlyValue(),
+                project.getMaintenanceStartDate(),
                 project.getStartDate(),
                 project.getDeliveryDate(),
                 project.getCreatedAt()

@@ -111,4 +111,10 @@ public class RefreshTokenService {
                     }
                 });
     }
+
+    @Transactional
+    public void revokeAll(User user) {
+        refreshTokenRepository.findByUser_IdAndRevokedAtIsNull(user.getId())
+                .forEach(RefreshToken::revoke);
+    }
 }

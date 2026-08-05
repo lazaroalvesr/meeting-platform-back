@@ -49,9 +49,6 @@ public class Client {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "asaas_customer_id", length = 64, unique = true)
-    private String asaasCustomerId;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -83,10 +80,6 @@ public class Client {
         this.phone = phone;
         this.document = document;
         this.notes = notes;
-    }
-
-    public void linkAsaasCustomer(String asaasCustomerId) {
-        this.asaasCustomerId = asaasCustomerId;
     }
 
     @PrePersist

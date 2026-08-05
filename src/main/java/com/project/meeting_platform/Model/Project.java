@@ -63,9 +63,6 @@ public class Project {
     @Column(name = "maintenance_start_date")
     private LocalDate maintenanceStartDate;
 
-    @Column(name = "asaas_subscription_id", length = 64, unique = true)
-    private String asaasSubscriptionId;
-
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
@@ -140,14 +137,6 @@ public class Project {
 
     public void attachContract(String contractUrl) {
         this.contractUrl = contractUrl;
-    }
-
-    public void linkAsaasSubscription(String asaasSubscriptionId) {
-        this.asaasSubscriptionId = asaasSubscriptionId;
-    }
-
-    public void unlinkAsaasSubscription() {
-        this.asaasSubscriptionId = null;
     }
 
     @PrePersist

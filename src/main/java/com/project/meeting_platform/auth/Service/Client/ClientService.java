@@ -5,7 +5,6 @@ import com.project.meeting_platform.Model.User;
 import com.project.meeting_platform.Repository.Client.ClientRepository;
 import com.project.meeting_platform.Repository.Project.ProjectRepository;
 import com.project.meeting_platform.Repository.User.UserRepository;
-import com.project.meeting_platform.auth.Service.Asaas.AsaasSubscriptionService;
 import com.project.meeting_platform.auth.dto.Client.ClientResponse;
 import com.project.meeting_platform.auth.dto.Client.CreateClientRequest;
 import com.project.meeting_platform.auth.dto.Client.UpdateClientRequest;
@@ -23,18 +22,15 @@ public class ClientService {
     private final ClientRepository clientRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
-    private final AsaasSubscriptionService asaasSubscriptionService;
 
     public ClientService(
             ClientRepository clientRepository,
             UserRepository userRepository,
-            ProjectRepository projectRepository,
-            AsaasSubscriptionService asaasSubscriptionService
+            ProjectRepository projectRepository
     ) {
         this.clientRepository = clientRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
-        this.asaasSubscriptionService = asaasSubscriptionService;
     }
 
     @Transactional
@@ -78,8 +74,6 @@ public class ClientService {
                 .filter(foundClient -> foundClient.getOwner().getEmail().equals(authenticatedEmail))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado."));
 
-        projectRepository.findByClient_Id(client.getId())
-                .forEach(asaasSubscriptionService::cancelMaintenanceSubscription);
         clientRepository.delete(client);
     }
 

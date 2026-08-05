@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 @Service
 public class MaintenanceBillingService {
@@ -25,44 +26,47 @@ public class MaintenanceBillingService {
     }
 
     @Transactional
-    public void createCurrentMonthPayments() {
+    public void createUpcomingPayments() {
         LocalDate today = LocalDate.now();
         projectRepository.findByMaintenanceActiveTrue()
-                .forEach(project -> createCurrentMonthPayment(project, today));
+                .forEach(project -> createEligiblePayments(project, today));
     }
 
     @Transactional
-    public void createInitialOrCurrentMonthPayment(Project project) {
-        LocalDate today = LocalDate.now();
-        if (project.getMaintenanceStartDate() != null && project.getMaintenanceStartDate().isAfter(today)) {
-            createPaymentForMonth(project, YearMonth.from(project.getMaintenanceStartDate()));
-            return;
-        }
-        createCurrentMonthPayment(project, today);
+    public void createEligiblePayments(Project project) {
+        createEligiblePayments(project, LocalDate.now());
     }
 
     @Scheduled(cron = "${app.maintenance-billing.cron:0 5 0 * * *}", zone = "${app.time-zone:America/Sao_Paulo}")
     @Transactional
-    public void scheduleCurrentMonthPayments() {
-        createCurrentMonthPayments();
+    public void scheduleUpcomingPayments() {
+        createUpcomingPayments();
     }
 
-    private void createCurrentMonthPayment(Project project, LocalDate today) {
+    private void createEligiblePayments(Project project, LocalDate today) {
         if (!project.isMaintenanceActive()
-                || project.getAsaasSubscriptionId() != null
                 || project.getMaintenanceMonthlyValue() == null
                 || project.getMaintenanceMonthlyValue().signum() <= 0
                 || project.getMaintenanceStartDate() == null
-                || project.getMaintenanceStartDate().isAfter(today)) {
+        ) {
             return;
         }
 
-        createPaymentForMonth(project, YearMonth.from(today));
+        YearMonth firstBillingMonth = YearMonth.from(project.getMaintenanceStartDate());
+        for (YearMonth billingMonth : List.of(YearMonth.from(today), YearMonth.from(today).plusMonths(1))) {
+            if (billingMonth.isBefore(firstBillingMonth)) {
+                continue;
+            }
+
+            LocalDate dueDate = dueDateFor(project, billingMonth);
+            if (!today.isBefore(dueDate.minusDays(5))) {
+                createPaymentForMonth(project, billingMonth);
+            }
+        }
     }
 
     private void createPaymentForMonth(Project project, YearMonth billingMonth) {
         if (!project.isMaintenanceActive()
-                || project.getAsaasSubscriptionId() != null
                 || project.getMaintenanceMonthlyValue() == null
                 || project.getMaintenanceMonthlyValue().signum() <= 0
                 || project.getMaintenanceStartDate() == null) {
@@ -76,8 +80,7 @@ public class MaintenanceBillingService {
             return;
         }
 
-        int dueDay = Math.min(project.getMaintenanceStartDate().getDayOfMonth(), billingMonth.lengthOfMonth());
-        LocalDate dueDate = billingMonth.atDay(dueDay);
+        LocalDate dueDate = dueDateFor(project, billingMonth);
         paymentRepository.save(new Payment(
                 project,
                 "Manutenção mensal - " + project.getName(),
@@ -88,5 +91,10 @@ public class MaintenanceBillingService {
                 referenceMonth,
                 null
         ));
+    }
+
+    private LocalDate dueDateFor(Project project, YearMonth billingMonth) {
+        int dueDay = Math.min(project.getMaintenanceStartDate().getDayOfMonth(), billingMonth.lengthOfMonth());
+        return billingMonth.atDay(dueDay);
     }
 }

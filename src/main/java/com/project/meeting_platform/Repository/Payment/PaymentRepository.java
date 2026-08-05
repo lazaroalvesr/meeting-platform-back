@@ -20,8 +20,6 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
             LocalDate referenceMonth
     );
 
-    Optional<Payment> findByAsaasPaymentId(String asaasPaymentId);
-
     Optional<Payment> findByProject_IdAndPaymentTypeAndReferenceMonth(
             UUID projectId,
             com.project.meeting_platform.Enum.Payment.PaymentType paymentType,

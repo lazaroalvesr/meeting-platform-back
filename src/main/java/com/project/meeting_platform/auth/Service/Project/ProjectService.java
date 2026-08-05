@@ -14,7 +14,6 @@ import com.project.meeting_platform.auth.dto.Project.CreateProjectRequest;
 import com.project.meeting_platform.auth.dto.Project.ProjectResponse;
 import com.project.meeting_platform.auth.dto.Project.UpdateProjectRequest;
 import com.project.meeting_platform.auth.Service.Payment.MaintenanceBillingService;
-import com.project.meeting_platform.auth.Service.Asaas.AsaasSubscriptionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -42,22 +41,19 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
     private final MaintenanceBillingService maintenanceBillingService;
-    private final AsaasSubscriptionService asaasSubscriptionService;
 
     public ProjectService(
             ProjectRepository projectRepository,
             ClientRepository clientRepository,
             UserRepository userRepository,
             PaymentRepository paymentRepository,
-            MaintenanceBillingService maintenanceBillingService,
-            AsaasSubscriptionService asaasSubscriptionService
+            MaintenanceBillingService maintenanceBillingService
     ) {
         this.projectRepository = projectRepository;
         this.clientRepository = clientRepository;
         this.userRepository = userRepository;
         this.paymentRepository = paymentRepository;
         this.maintenanceBillingService = maintenanceBillingService;
-        this.asaasSubscriptionService = asaasSubscriptionService;
     }
 
     @Transactional
@@ -131,7 +127,6 @@ public class ProjectService {
     @Transactional
     public void delete(String authenticatedEmail, java.util.UUID projectId) {
         Project project = findOwnedProject(authenticatedEmail, projectId);
-        asaasSubscriptionService.cancelMaintenanceSubscription(project);
         paymentRepository.deleteByProject_Id(project.getId());
         projectRepository.delete(project);
 
@@ -234,12 +229,8 @@ public class ProjectService {
     }
 
     private void syncMaintenanceBilling(Project project) {
-        if (!project.isMaintenanceActive()) {
-            asaasSubscriptionService.cancelMaintenanceSubscription(project);
-            return;
-        }
-        if (!asaasSubscriptionService.syncMaintenanceSubscription(project)) {
-            maintenanceBillingService.createInitialOrCurrentMonthPayment(project);
+        if (project.isMaintenanceActive()) {
+            maintenanceBillingService.createEligiblePayments(project);
         }
     }
 

@@ -45,9 +45,6 @@ public class Payment {
     @Column(name = "reference_month")
     private LocalDate referenceMonth;
 
-    @Column(name = "asaas_payment_id", length = 64, unique = true)
-    private String asaasPaymentId;
-
     @Column(name = "paid_at")
     private Instant paidAt;
 
@@ -102,19 +99,4 @@ public class Payment {
         }
     }
 
-    public void syncFromAsaas(
-            String asaasPaymentId,
-            PaymentStatus status,
-            BigDecimal amount,
-            LocalDate dueDate,
-            LocalDate referenceMonth,
-            Instant paidAt
-    ) {
-        this.asaasPaymentId = asaasPaymentId;
-        this.status = status;
-        this.amount = amount;
-        this.dueDate = dueDate;
-        this.referenceMonth = referenceMonth;
-        this.paidAt = paidAt;
-    }
 }

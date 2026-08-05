@@ -52,7 +52,6 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/webhooks/asaas").permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/rooms/*"

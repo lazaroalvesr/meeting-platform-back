@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
@@ -14,7 +13,5 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findByMaintenanceActiveTrue();
 
     List<Project> findByClient_Id(UUID clientId);
-
-    Optional<Project> findByAsaasSubscriptionId(String asaasSubscriptionId);
 
 }

@@ -32,3 +32,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Variáveis locais e chaves de integrações.
+.env
+.env.*
+!.env.example

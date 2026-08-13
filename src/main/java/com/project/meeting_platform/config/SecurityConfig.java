@@ -83,8 +83,9 @@ public class SecurityConfig {
             @Value("${app.frontend-url}") String frontendUrl
     ) {
         CorsConfiguration configuration = new CorsConfiguration();
+        String allowedFrontendOrigin = frontendUrl.replaceAll("/+$", "");
 
-        configuration.setAllowedOrigins(List.of(frontendUrl));
+        configuration.setAllowedOrigins(List.of(allowedFrontendOrigin));
         configuration.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));

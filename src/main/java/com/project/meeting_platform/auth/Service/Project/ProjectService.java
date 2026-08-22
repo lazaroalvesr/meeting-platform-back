@@ -30,11 +30,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 @Service
 public class ProjectService {
 
     private static final long MAX_CONTRACT_SIZE_BYTES = 10L * 1024 * 1024;
+    private static final long MAX_BACKUP_SIZE_BYTES = 200L * 1024 * 1024;
 
     private final ProjectRepository projectRepository;
     private final ClientRepository clientRepository;
@@ -125,6 +127,37 @@ public class ProjectService {
     }
 
     @Transactional
+    public ProjectResponse uploadBackup(String authenticatedEmail, UUID projectId, MultipartFile file) {
+        Project project = findOwnedProject(authenticatedEmail, projectId);
+        validateZip(file);
+
+        try {
+            Path backupsDirectory = Path.of("uploads", "backups").toAbsolutePath().normalize();
+            Files.createDirectories(backupsDirectory);
+            Path target = backupsDirectory.resolve(project.getId() + ".zip");
+            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            project.attachBackup("/api/projects/" + project.getId() + "/backup", file.getOriginalFilename());
+            return ProjectResponse.from(project);
+        } catch (IOException exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Não foi possível salvar o backup.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Resource loadBackup(String authenticatedEmail, UUID projectId) {
+        Project project = findOwnedProject(authenticatedEmail, projectId);
+        if (project.getBackupUrl() == null || !project.getBackupUrl().endsWith("/backup")) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum backup foi enviado para este projeto.");
+        }
+
+        Path backupPath = Path.of("uploads", "backups", project.getId() + ".zip").toAbsolutePath().normalize();
+        if (!Files.isRegularFile(backupPath)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo de backup não encontrado.");
+        }
+        return new FileSystemResource(backupPath);
+    }
+
+    @Transactional
     public void delete(String authenticatedEmail, java.util.UUID projectId) {
         Project project = findOwnedProject(authenticatedEmail, projectId);
         paymentRepository.deleteByProject_Id(project.getId());
@@ -132,6 +165,7 @@ public class ProjectService {
 
         try {
             Files.deleteIfExists(Path.of("uploads", "contracts", project.getId() + ".pdf").toAbsolutePath().normalize());
+            Files.deleteIfExists(Path.of("uploads", "backups", project.getId() + ".zip").toAbsolutePath().normalize());
         } catch (IOException ignored) {
             // A exclusão do registro não deve falhar apenas porque o arquivo local já não existe.
         }
@@ -190,6 +224,20 @@ public class ProjectService {
         boolean hasPdfType = "application/pdf".equalsIgnoreCase(file.getContentType());
         if (!hasPdfExtension || !hasPdfType) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Envie somente arquivos em PDF.");
+        }
+    }
+
+    private void validateZip(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Selecione um arquivo ZIP.");
+        }
+        if (file.getSize() > MAX_BACKUP_SIZE_BYTES) {
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "O backup deve ter no máximo 200 MB.");
+        }
+        String fileName = file.getOriginalFilename();
+        boolean hasZipExtension = fileName != null && fileName.toLowerCase().endsWith(".zip");
+        if (!hasZipExtension) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Envie somente arquivos ZIP.");
         }
     }
 

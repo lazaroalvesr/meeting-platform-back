@@ -54,6 +54,12 @@ public class Project {
     @Column(name = "contract_url", length = 2048)
     private String contractUrl;
 
+    @Column(name = "backup_url", length = 2048)
+    private String backupUrl;
+
+    @Column(name = "backup_file_name", length = 255)
+    private String backupFileName;
+
     @Column(name = "maintenance_active", nullable = false)
     private boolean maintenanceActive;
 
@@ -137,6 +143,11 @@ public class Project {
 
     public void attachContract(String contractUrl) {
         this.contractUrl = contractUrl;
+    }
+
+    public void attachBackup(String backupUrl, String backupFileName) {
+        this.backupUrl = backupUrl;
+        this.backupFileName = backupFileName;
     }
 
     @PrePersist

@@ -84,7 +84,7 @@ public class ProjectService {
         );
 
         projectRepository.save(project);
-        createProjectPayments(project, request.installmentCount());
+        createProjectPayments(project, request.installmentCount(), request.firstInstallmentCardInstallmentCount(), request.secondInstallmentCardInstallmentCount());
         syncMaintenanceBilling(project);
         return ProjectResponse.from(project);
     }
@@ -234,7 +234,12 @@ public class ProjectService {
         }
     }
 
-    private void createProjectPayments(Project project, Integer requestedInstallments) {
+    private void createProjectPayments(
+            Project project,
+            Integer requestedInstallments,
+            Integer firstInstallmentCardInstallmentCount,
+            Integer secondInstallmentCardInstallmentCount
+    ) {
         if (project.getTotalValue() == null || project.getTotalValue().signum() <= 0) {
             return;
         }
@@ -248,7 +253,7 @@ public class ProjectService {
                     .setScale(2, RoundingMode.HALF_UP);
             BigDecimal finalAmount = project.getTotalValue().subtract(entryAmount);
 
-            paymentRepository.save(new Payment(
+            Payment entryPayment = new Payment(
                     project,
                     "Entrada 50% - " + project.getName(),
                     PaymentType.PROJECT,
@@ -256,8 +261,11 @@ public class ProjectService {
                     entryAmount,
                     dueDate,
                     null
-            ));
-            paymentRepository.save(new Payment(
+            );
+            entryPayment.setCardInstallmentCount(firstInstallmentCardInstallmentCount);
+            paymentRepository.save(entryPayment);
+
+            Payment finalPayment = new Payment(
                     project,
                     "Saldo final 50% - " + project.getName(),
                     PaymentType.PROJECT,
@@ -265,7 +273,9 @@ public class ProjectService {
                     finalAmount,
                     dueDate,
                     null
-            ));
+            );
+            finalPayment.setCardInstallmentCount(secondInstallmentCardInstallmentCount);
+            paymentRepository.save(finalPayment);
             return;
         }
 

@@ -51,6 +51,9 @@ public class Payment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "card_installment_count")
+    private Integer cardInstallmentCount;
+
     public Payment(
             Project project,
             String description,
@@ -91,6 +94,10 @@ public class Payment {
     public void markAsPaid() {
         this.status = PaymentStatus.PAID;
         this.paidAt = Instant.now();
+    }
+
+    public void setCardInstallmentCount(Integer cardInstallmentCount) {
+        this.cardInstallmentCount = cardInstallmentCount != null && cardInstallmentCount > 1 ? cardInstallmentCount : null;
     }
 
     public void reschedule(LocalDate dueDate) {

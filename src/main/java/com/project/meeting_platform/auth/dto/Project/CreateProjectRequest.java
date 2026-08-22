@@ -27,6 +27,8 @@ public record CreateProjectRequest(
         @DecimalMin(value = "0.00") BigDecimal maintenanceMonthlyValue,
         LocalDate maintenanceStartDate,
         @Min(1) @Max(2) Integer installmentCount,
+        @Min(2) @Max(12) Integer firstInstallmentCardInstallmentCount,
+        @Min(2) @Max(12) Integer secondInstallmentCardInstallmentCount,
         @NotNull LocalDate startDate,
         @NotNull LocalDate deliveryDate
 ) {

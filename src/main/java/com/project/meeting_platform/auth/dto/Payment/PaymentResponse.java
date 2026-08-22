@@ -19,7 +19,8 @@ public record PaymentResponse(
         PaymentStatus status,
         BigDecimal amount,
         LocalDate dueDate,
-        Instant paidAt
+        Instant paidAt,
+        Integer cardInstallmentCount
 ) {
     public static PaymentResponse from(Payment payment) {
         return new PaymentResponse(
@@ -32,7 +33,8 @@ public record PaymentResponse(
                 payment.getStatus(),
                 payment.getAmount(),
                 payment.getDueDate(),
-                payment.getPaidAt()
+                payment.getPaidAt(),
+                payment.getCardInstallmentCount()
         );
     }
 }

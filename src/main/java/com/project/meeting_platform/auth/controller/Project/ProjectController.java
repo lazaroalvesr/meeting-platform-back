@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -64,6 +65,27 @@ public class ProjectController {
     ) {
         projectService.delete(authentication.getName(), projectId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/{projectId}/backup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProjectResponse> uploadBackup(
+            @PathVariable UUID projectId,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(projectService.uploadBackup(authentication.getName(), projectId, file));
+    }
+
+    @GetMapping("/{projectId}/backup")
+    public ResponseEntity<Resource> downloadBackup(
+            @PathVariable UUID projectId,
+            Authentication authentication
+    ) {
+        Resource backup = projectService.loadBackup(authentication.getName(), projectId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=backup-" + projectId + ".zip")
+                .body(backup);
     }
 
     @PostMapping(value = "/{projectId}/contract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
